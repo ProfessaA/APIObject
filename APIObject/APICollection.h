@@ -17,8 +17,8 @@
 
 - (void)commonInit NS_REQUIRES_SUPER;
 
-- (void)parse:(NSArray *)networkJSONArray;
-- (NSDictionary *)toJSON;
+- (NSArray *)toNetworkArray;
+- (void)parseArray:(NSArray *)networkObjectsArray;
 
 - (id)buildObject;
 - (void)removeObjects:(NSArray *)objectsToRemove;

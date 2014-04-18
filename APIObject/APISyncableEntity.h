@@ -19,8 +19,9 @@ typedef NS_ENUM(NSUInteger, APISyncableEntityState) {
 - (instancetype)initWithOwner:(APIObject *)owner;
 
 - (id<APISyncableEntityParser>)parser;
-- (void)parse:(id)networkJSON;
-- (NSDictionary *)toJSON;
+- (void)parse:(NSDictionary *)networkResponseDictionary;
+- (void)parseNetworkValue:(id)networkValue;
+- (id)toNetworkValue;
 
 - (NSString *)pathForCreate;
 - (NSString *)pathForUpdate;
@@ -42,7 +43,5 @@ typedef NS_ENUM(NSUInteger, APISyncableEntityState) {
 - (NSDictionary *)paramsForRead;
 
 - (void)orderAfterParse;
-
-- (void)parseJSON:(NSDictionary *)jsonDictionary;
 
 @end

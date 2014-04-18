@@ -74,11 +74,6 @@ static dispatch_queue_t kAPIObjectSaveQueue;
     return nil;
 }
 
-+ (BOOL)saveSecurely
-{
-    return NO;
-}
-
 #pragma mark - Public Class Methods
 
 + (instancetype)existing
@@ -89,26 +84,39 @@ static dispatch_queue_t kAPIObjectSaveQueue;
     return existingObject;
 }
 
-+ (instancetype)fromJSON:(NSDictionary *)networkJSON
++ (instancetype)fromDictionary:(NSDictionary *)networkDictionary
 {
     APIObject *apiObject = [self new];
-    NSDictionary *wrappedJSON = @{[self resourceName]: networkJSON};
-    [apiObject.parser networkDictionaryToObject:wrappedJSON];
-    apiObject.state = APISyncableEntityStateSynced;
+    [apiObject _parseAndMarkAsSynced:@{[self resourceName]: networkDictionary}];
     
     return apiObject;
 }
 
-- (NSDictionary *)toJSON
+- (void)parseDictionary:(NSDictionary *)networkDictionary
+{
+    [self _parseAndMarkAsSynced:@{[self.class resourceName]: networkDictionary}];
+}
+
+- (void)parseNetworkValue:(id)networkValue
+{
+    [self parseDictionary:networkValue];
+}
+
+- (id)toNetworkValue
+{
+    return [self toNetworkDictionary];
+}
+
+- (NSDictionary *)toNetworkDictionary
 {
     return [self.parser objectToNetworkDictionary];
 }
 
-+ (id)identifierFromJSON:(NSDictionary *)networkJSON
++ (id)identifierFromDictionary:(NSDictionary *)networkDictionary
 {
     NSString *identifier = NSStringFromSelector([self resourceIdentifier]);
     NSString *networkIdentifier = [self objectToNetworkKeyMap][identifier];
-    return networkJSON[networkIdentifier];
+    return networkDictionary[networkIdentifier];
 }
 
 #pragma mark - Private Class Methods
@@ -235,10 +243,15 @@ static dispatch_queue_t kAPIObjectSaveQueue;
             error:NULL];
 }
 
-- (void)parse:(NSDictionary *)networkJSON
+- (void)_parseAndMarkAsSynced:(NSDictionary *)networkResponseDictionary
 {
-    [self.parser networkDictionaryToObject:@{[self.class resourceName] : networkJSON}];
+    [self parse:networkResponseDictionary];
     self.state = APISyncableEntityStateSynced;
+}
+
+- (void)parse:(NSDictionary *)networkResponseDictionary
+{
+    [self.parser networkDictionaryToObject:networkResponseDictionary];
 }
 
 - (APISyncableEntityState)syncState

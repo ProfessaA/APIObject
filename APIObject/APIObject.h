@@ -15,8 +15,8 @@
 
 #pragma mark - Class Methods
 + (instancetype)existing;
-+ (instancetype)fromJSON:(NSDictionary *)networkJSON;
-+ (id)identifierFromJSON:(NSDictionary *)networkJSON;
++ (instancetype)fromDictionary:(NSDictionary *)networkDictionary;
++ (id)identifierFromDictionary:(NSDictionary *)networkDictionary;
 
 #pragma mark - Instance Methods
 @property (nonatomic, assign, readonly) APISyncableEntityState syncState;
@@ -25,8 +25,8 @@
 
 - (void)commonInit NS_REQUIRES_SUPER;
 
-- (void)parse:(NSDictionary *)networkJSON;
-- (NSDictionary *)toJSON;
+- (void)parseDictionary:(NSDictionary *)networkDictionary;
+- (NSDictionary *)toNetworkDictionary;
 
 - (id)identifier;
 - (NSString *)resourcePath;

@@ -8,12 +8,17 @@
 #import "BlockRunner.h"
 #import "APIHTTPClient.h"
 
-@interface APIEntitySyncer ()
+@protocol APISyncableEntity_Private<APISyncableEntity>
 
-@property (nonatomic, weak) id<APISyncableEntity> syncableEntity;
+- (void)_parseAndMarkAsSynced:(NSDictionary *)networkResponseDictionary;
 
 @end
 
+@interface APIEntitySyncer ()
+
+@property (nonatomic, weak) id<APISyncableEntity_Private> syncableEntity;
+
+@end
 
 NSString * const APIEntitySyncErrorDomain = @"APIEntitySyncErrorDomain";
 static NSURL *APIEntitySyncerBaseURL;
@@ -39,7 +44,7 @@ typedef NS_ENUM(NSUInteger, APIEntitySyncerAction) {
 {
     self = [super init];
     if (self) {
-        self.syncableEntity = syncableEntity;
+        self.syncableEntity = (id<APISyncableEntity_Private>)syncableEntity;
     }
     return self;
 }
@@ -177,12 +182,7 @@ typedef NS_ENUM(NSUInteger, APIEntitySyncerAction) {
                                                                    userInfo:@{NSLocalizedDescriptionKey: @"An error occured"}]];
               }
               
-              if ([self.syncableEntity respondsToSelector:@selector(parseJSON:)]) {
-                  [self.syncableEntity parseJSON:response];
-              } else {
-                  [me.syncableEntity.parser networkDictionaryToObject:response];
-              }
-              me.syncableEntity.state = APISyncableEntityStateSynced;
+              [me.syncableEntity _parseAndMarkAsSynced:response];
               
               [BlockRunner runBlock:^{ [requestDeferred resolveWithValue:me.syncableEntity]; } onThread:dispatch_get_main_queue()];
           }

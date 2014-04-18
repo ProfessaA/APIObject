@@ -22,34 +22,34 @@
 
 - (NSDictionary *)objectToNetworkDictionary
 {
-    NSMutableArray *objectsJSON = [@[] mutableCopy];
+    NSMutableArray *networkObjectsArray = [@[] mutableCopy];
     
     for (id<APISyncableEntity> entity in self.collection.objects) {
-        [objectsJSON addObject:[entity.parser objectToNetworkDictionary]];
+        [networkObjectsArray addObject:[entity.parser objectToNetworkDictionary]];
     }
     
     return @{
-             self.collection.resourceName : objectsJSON
+             self.collection.resourceName : networkObjectsArray
              };
 }
 
 - (void)networkDictionaryToObject:(NSDictionary *)networkDictionary
 {
-    NSArray *networkJSONObjects = networkDictionary[self.collection.resourceName];
+    NSArray *networkObjectsArray = networkDictionary[self.collection.resourceName];
     
-    if (![networkJSONObjects isKindOfClass:[NSArray class]]) return;
+    if (![networkObjectsArray isKindOfClass:[NSArray class]]) return;
     
     [self.collection lockObjects];
     NSMutableArray *objectsToKeep = [@[] mutableCopy];
-    for (NSDictionary *objectJSON in networkJSONObjects) {
+    for (NSDictionary *networkObjectDictionary in networkObjectsArray) {
         APIObject *object;
-        id identifier = [[self.collection.class objectClass] identifierFromJSON:objectJSON];
+        id identifier = [[self.collection.class objectClass] identifierFromDictionary:networkObjectDictionary];
         if (identifier == [NSNull null]) identifier = nil;
         
         if ((object = [self.collection objectWithIdentifier:identifier]) != nil) {
-            [object parse:objectJSON];
+            [object parseDictionary:networkObjectDictionary];
         } else {
-            object = [[self.collection.class objectClass] fromJSON:objectJSON];
+            object = [[self.collection.class objectClass] fromDictionary:networkObjectDictionary];
             [self.collection addObject:object];
             object.state = APISyncableEntityStateSynced;
         }

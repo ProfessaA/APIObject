@@ -36,7 +36,7 @@
          id value = getObjectProperty(self.apiObject, propertySEL);
          
          if ([value conformsToProtocol:@protocol(APISyncableEntity)]) {
-             value = [((id<APISyncableEntity>)value) toJSON];
+             value = [((id<APISyncableEntity>)value) toNetworkValue];
          }
          
          if (value) networkDictionary[networkProperty] = value;
@@ -64,7 +64,7 @@
         if (networkPropertyValue == nil || networkPropertyValue == [NSNull null]) continue;
         
         if ([propertyValue conformsToProtocol:@protocol(APISyncableEntity)]) {
-            [(id<APISyncableEntity>)propertyValue parse:networkPropertyValue];
+            [(id<APISyncableEntity>)propertyValue parseNetworkValue:networkPropertyValue];
         } else if ([self.apiObject respondsToSelector:propertySetterSEL]) {
             void (*setPropertyValue)(id, SEL, id) = (void (*)(id, SEL, id)) objc_msgSend;
             setPropertyValue(self.apiObject, propertySetterSEL, networkPropertyValue);

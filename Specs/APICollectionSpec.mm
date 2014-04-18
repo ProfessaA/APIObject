@@ -207,7 +207,7 @@ describe(@"APICollection", ^{
         });
     });
     
-    describe(@"parsing json", ^{
+    describe(@"parsing a network dictionary", ^{
         __block APIObjectSubclass *existingInstance;
         __block APIObjectSubclass *instanceToDelete;
         beforeEach(^{
@@ -218,8 +218,8 @@ describe(@"APICollection", ^{
             instanceToDelete = [subject buildObject];
             instanceToDelete.property1 = @"99";
             
-            [subject parse:@[@{@"network_property_1": @"1", @"network_property_2": @[@"changed"]},
-                             @{@"network_property_1": @"2", @"network_property_2": @[@"new"]}]];
+            [subject parseArray:@[@{@"network_property_1": @"1", @"network_property_2": @[@"changed"]},
+                                  @{@"network_property_1": @"2", @"network_property_2": @[@"new"]}]];
         });
         
         it(@"modifies existing objects in place", ^{
@@ -239,8 +239,8 @@ describe(@"APICollection", ^{
         });
         
         it(@"respects the servers order over the client order", ^{
-            [subject parse:@[@{@"network_property_1": @"2", @"network_property_2": @[@"new"]},
-                             @{@"network_property_1": @"1", @"network_property_2": @[@"changed"]}]];
+            [subject parseArray:@[@{@"network_property_1": @"2", @"network_property_2": @[@"new"]},
+                                  @{@"network_property_1": @"1", @"network_property_2": @[@"changed"]}]];
             
             [subject.objects.firstObject property1] should equal(@"2");
             [subject.objects.lastObject property1] should equal(@"1");
@@ -289,20 +289,20 @@ describe(@"APICollection", ^{
             object.myCollection = subject;
         });
         
-        it(@"parses incoming JSON properly", ^{
-            [object parse:@{
-                            @"network_collection": @[@{@"network_property_1": @"yo", @"network_property_2": @[@"yo"]}]
-                            }];
+        it(@"parses incoming network dictionary properly", ^{
+            [object parseDictionary:@{
+                                      @"network_collection": @[@{@"network_property_1": @"yo", @"network_property_2": @[@"yo"]}]
+                                      }];
             [[subject objectWithIdentifier:@"yo"] property2] should equal(@[@"yo"]);
         });
         
-        it(@"creates outgoing JSON properly", ^{
+        it(@"creates outgoing network dictionary properly", ^{
             APIObjectSubclass *builtObject = [subject buildObject];
             builtObject.property1 = @"yup";
             
-            NSDictionary *objectJSON = [[(id<APISyncableEntity>)object parser] objectToNetworkDictionary];
-            NSDictionary *expectedDictionary = @{@"network_collection": [(id<APISyncableEntity>)subject toJSON]};
-            objectJSON should equal(expectedDictionary);
+            NSDictionary *networkDictionary = [[(id<APISyncableEntity>)object parser] objectToNetworkDictionary];
+            NSDictionary *expectedDictionary = @{@"network_collection": [(id<APISyncableEntity>)subject toNetworkValue]};
+            networkDictionary should equal(expectedDictionary);
         });
         
         it(@"encodes and decodes correctly", ^{

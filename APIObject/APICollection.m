@@ -34,6 +34,11 @@
     return self;
 }
 
+- (NSString *)resourceName
+{
+    return @"";
+}
+
 - (instancetype)initWithOwner:(APIObject *)owner
 {
     self = [self init];
@@ -79,11 +84,6 @@
     return [objectResourcePath stringByAppendingPathComponent:[self.class resourcePath]];
 }
 
-- (NSString *)resourceName
-{
-    return @"";
-}
-
 - (id)buildObject
 {
     APIObject *newObject = [[self.class objectClass] new];
@@ -92,12 +92,33 @@
     return newObject;
 }
 
-- (void)parse:(NSArray *)networkJSONArray
+- (void)_parseAndMarkAsSynced:(NSDictionary *)networkResponseDictionary
 {
-    [self.parser networkDictionaryToObject:@{self.resourceName : networkJSONArray}];
+    [self parse:networkResponseDictionary];
+    self.state = APISyncableEntityStateSynced;
 }
 
-- (NSDictionary *)toJSON
+- (void)parse:(NSDictionary *)networkResponseDictionary
+{
+    [self.parser networkDictionaryToObject:networkResponseDictionary];
+}
+
+- (void)parseArray:(NSArray *)networkObjectsArray
+{
+    [self _parseAndMarkAsSynced:@{self.resourceName: networkObjectsArray}];
+}
+
+- (void)parseNetworkValue:(id)networkValue
+{
+    [self parseArray:networkValue];
+}
+
+- (id)toNetworkValue
+{
+    return [self toNetworkArray];
+}
+
+- (NSDictionary *)toNetworkArray
 {
     return [self.parser objectToNetworkDictionary][self.resourceName];
 }

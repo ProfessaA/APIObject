@@ -9,6 +9,21 @@
 using namespace Cedar::Matchers;
 using namespace Cedar::Doubles;
 
+@interface APIObjectWithParseOverride : APIObjectSubclass
+@property (nonatomic, strong) NSString *customProperty;
+@end
+
+
+@implementation APIObjectWithParseOverride : APIObjectSubclass
+
+- (void)parse:(NSDictionary *)networkDictionary
+{
+    self.customProperty = networkDictionary[@"customThing"];
+}
+
+@end
+
+
 
 SPEC_BEGIN(APIObjectSpec)
 
@@ -280,6 +295,55 @@ describe(@"APIObject", ^{
         });
     });
     
+    describe(@"fetching existing", ^{
+        beforeEach(^{
+            subject = [APIObjectSubclass existing];
+            [subject fetch];
+            subject.property1 = @"word";
+            subject.property2 = @[@"homes"];
+            subject.state = APISyncableEntityStateDirty;
+        });
+        
+        context(@"when the request succeeds", ^{
+            beforeEach(^{
+                NSDictionary *responseDictionary = @{[APIObjectSubclass resourceName]: @{
+                                                             @"network_property_1": @"yoooooo",
+                                                             @"network_property_2": @[ @"classic" ]
+                                                             }
+                                                     };
+
+                [requestDeferred resolveWithValue:responseDictionary];
+            });
+            
+            it(@"updates the existing object", ^{
+                subject.syncState should equal(APISyncableEntityStateSynced);
+                subject.property1 should equal(@"yoooooo");
+                subject.property2 should equal(@[ @"classic" ]);
+            });
+        });
+        
+        context(@"when the request fails", ^{
+            itShouldBehaveLike(@"an APIObject rejection");
+        });
+        
+    });
+    
+    describe(@"when receiving a network dictionary with an APIObject that has a custom parse method", ^{
+        
+        beforeEach(^{
+            subject = [APIObjectWithParseOverride existing];
+            ((APIObjectWithParseOverride *)subject).customProperty = @"this object wildin";
+            [subject fetch];
+            
+            [requestDeferred resolveWithValue:@{@"customThing": @"this server wildin"}];
+        });
+        
+        it(@"uses the custom parse method", ^{
+            subject.state should equal(APISyncableEntityStateSynced);
+            ((APIObjectWithParseOverride *)subject).customProperty should equal(@"this server wildin");
+        });
+    });
+    
     describe(@"destroying an object", ^{
         __block APICollection *collection;
         
@@ -356,13 +420,13 @@ describe(@"APIObject", ^{
         });
     });
     
-    describe(@"parsing JSON", ^{
+    describe(@"parsing a dictionary of network values", ^{
         describe(@"without a pre-exiting instance", ^{
             it(@"creates a new object with the expected properties", ^{
-                subject = [APIObjectSubclass fromJSON:@{
-                                                        @"network_property_1": @"property1",
-                                                        @"network_property_2": @[]
-                                                        }];
+                subject = [APIObjectSubclass fromDictionary:@{
+                                                              @"network_property_1": @"property1",
+                                                              @"network_property_2": @[]
+                                                              }];
                 
                 subject.syncState should equal(APISyncableEntityStateSynced);
                 subject.property1 should equal(@"property1");
@@ -370,10 +434,10 @@ describe(@"APIObject", ^{
             });
             
             it(@"converts '<null>' entries into nil", ^{
-                subject = [APIObjectSubclass fromJSON:@{
-                                                        @"network_property_1": @"property1",
-                                                        @"network_property_2": [NSNull null]
-                                                        }];
+                subject = [APIObjectSubclass fromDictionary:@{
+                                                              @"network_property_1": @"property1",
+                                                              @"network_property_2": [NSNull null]
+                                                              }];
                 
                 subject.syncState should equal(APISyncableEntityStateSynced);
                 subject.property1 should equal(@"property1");
@@ -384,22 +448,22 @@ describe(@"APIObject", ^{
         describe(@"with a pre-existing instance", ^{
             it(@"merges in the new properties", ^{
                 [(id<APISyncableEntity>)subject setState:APISyncableEntityStateDirty];
-                [subject parse:@{@"network_property_1": @"new value"}];
+                [subject parseDictionary:@{@"network_property_1": @"new value"}];
                 expect(subject.property1).to( equal(@"new value") );
                 expect(subject.property2).to( equal(@[@"array value"]) );
                 expect(subject.syncState).to( equal(APISyncableEntityStateSynced) );
             });
         });
         
-        describe(@"getting an identifier from JSON", ^{
-            it(@"returns the identifier from the given JSON", ^{
-                NSString *identifier = [APIObjectSubclass identifierFromJSON:@{@"network_property_1": @"property1", @"network_property_2": @[]}];
+        describe(@"getting an identifier from the network dictionary", ^{
+            it(@"returns the identifier from the given network dictionary", ^{
+                NSString *identifier = [APIObjectSubclass identifierFromDictionary:@{@"network_property_1": @"property1", @"network_property_2": @[]}];
                 identifier should equal(@"property1");
             });
         });
     });
     
-    describe(@"-toJSON", ^{
+    describe(@"-toNetworkDictionary", ^{
         beforeEach(^{
             subject = [APIObjectSubclass new];
             subject.property1 = @"property1";
@@ -408,10 +472,10 @@ describe(@"APIObject", ^{
         
         describe(@"when there are no network value methods", ^{
             it(@"returns a dictionary of the values", ^{
-                subject.toJSON should equal(@{
-                                              @"network_property_1": @"property1",
-                                              @"network_property_2": @[]
-                                              });
+                subject.toNetworkDictionary should equal(@{
+                                                           @"network_property_1": @"property1",
+                                                           @"network_property_2": @[]
+                                                           });
             });
         });
         
@@ -433,10 +497,10 @@ describe(@"APIObject", ^{
             });
             
             it(@"uses the network value", ^{
-                subject.toJSON should equal(@{
-                                              @"network_property_1": @"property1NetworkValue",
-                                              @"network_property_2": @[]
-                                              });
+                subject.toNetworkDictionary should equal(@{
+                                                           @"network_property_1": @"property1NetworkValue",
+                                                           @"network_property_2": @[]
+                                                           });
             });
         });
     });
