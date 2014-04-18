@@ -1,0 +1,7 @@
+build
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+.idea/
+junk*
+.DS_Store
+.bundle

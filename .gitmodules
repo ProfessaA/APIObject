@@ -1,0 +1,9 @@
+[submodule "Externals/RequestUtils"]
+	path = Externals/RequestUtils
+	url = https://github.com/nicklockwood/RequestUtils.git
+[submodule "Externals/deferred"]
+	path = Externals/deferred
+	url = https://github.com/kseebaldt/deferred.git
+[submodule "Externals/Cedar"]
+	path = Externals/Cedar
+	url = https://github.com/pivotal/cedar.git
